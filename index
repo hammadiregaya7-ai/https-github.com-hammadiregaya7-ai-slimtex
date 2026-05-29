@@ -15,7 +15,6 @@
   </style>
 </head>
 <body class="bg-gray-100 rtl">
-
   <!-- Top Bar -->
   <div class="teal text-white p-4 flex items-center justify-between sticky top-0 z-50">
     <div class="flex items-center gap-3">
@@ -135,7 +134,7 @@
           ('قماش حرير', 250, 80, 'متعدد');`);
       }
       refreshAll();
-      console.log('%c✅ تكاليف سوفت - النسيج جاهزة!', 'color:#0f766e; font-size:18px; font-weight:bold');
+      console.log('%c✅ تكاليف سوفت - النسيج جاهزة على GitHub!', 'color:#0f766e; font-size:18px; font-weight:bold');
     }
 
     function refreshAll() {
