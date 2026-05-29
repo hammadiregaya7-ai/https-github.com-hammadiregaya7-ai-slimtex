@@ -3,114 +3,82 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>تكاليف سوفت - النسيج</title>
+  <title>تكاليف سوفت - النسيج (SQLite)</title>
   <script src="https://cdn.jsdelivr.net/npm/sql.js@1.14.0/dist/sql-wasm.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: system-ui, sans-serif; }
+    body { font-family: system-ui, -apple-system, sans-serif; }
     .teal { background-color: #0f766e; }
     .screen { display: none; }
     .active { display: block; }
-    #print-area { display: none; }
-    @media print {
-      body * { visibility: hidden; }
-      #print-area, #print-area * { visibility: visible; }
-      #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 30px; font-size: 15px; }
-    }
+    .error-message { color: #dc2626; font-size: 0.875rem; }
+    .success-message { color: #059669; font-size: 0.875rem; }
   </style>
 </head>
 <body class="bg-gray-100 rtl">
-
   <!-- Top Bar -->
   <div class="teal text-white p-4 flex items-center justify-between sticky top-0 z-50">
     <div class="flex items-center gap-3">
       <i onclick="showScreen('dashboard')" class="fas fa-bars text-3xl cursor-pointer"></i>
-      <h1 class="text-2xl font-bold">تكاليف سوفت</h1>
-    </div>
-    <div class="flex gap-4">
-      <i class="fas fa-bell text-2xl"></i>
-      <i class="fas fa-share-alt text-2xl"></i>
+      <h1 class="text-2xl font-bold">تكاليف سوفت - النسيج</h1>
     </div>
   </div>
 
-  <!-- Quick Buttons -->
-  <div class="p-4 grid grid-cols-2 gap-3">
-    <button onclick="showScreen('cash')" class="bg-white rounded-2xl shadow p-4 flex items-center gap-3 hover:bg-teal-50">
-      <div class="text-4xl">📄</div><div><p class="font-bold">قبض/صرف</p></div>
-    </button>
-    <button onclick="showScreen('salesList')" class="bg-white rounded-2xl shadow p-4 flex items-center gap-3 hover:bg-teal-50">
-      <div class="text-4xl">🛒</div><div><p class="font-bold">المبيعات</p></div>
-    </button>
-    <button onclick="showScreen('customers')" class="bg-white rounded-2xl shadow p-4 flex items-center gap-3 hover:bg-teal-50">
-      <div class="text-4xl">👥</div><div><p class="font-bold">العملاء</p></div>
-    </button>
-    <button onclick="showScreen('suppliers')" class="bg-white rounded-2xl shadow p-4 flex items-center gap-3 hover:bg-teal-50">
-      <div class="text-4xl">🏪</div><div><p class="font-bold">الموردين</p></div>
-    </button>
-    <button onclick="showScreen('products')" class="bg-white rounded-2xl shadow p-4 flex items-center gap-3 hover:bg-teal-50">
-      <div class="text-4xl">📋</div><div><p class="font-bold">الأصناف</p></div>
-    </button>
+  <!-- Navigation -->
+  <div class="bg-white border-b flex text-center text-sm font-medium overflow-x-auto">
+    <button onclick="showScreen('dashboard')" class="flex-1 py-4 px-2 border-b-2 border-transparent active:border-teal-600">الرئيسية</button>
+    <button onclick="showScreen('sales')" class="flex-1 py-4 px-2 border-b-2 border-transparent active:border-teal-600">المبيعات</button>
+    <button onclick="showScreen('products')" class="flex-1 py-4 px-2 border-b-2 border-transparent active:border-teal-600">الأصناف</button>
+    <button onclick="showScreen('history')" class="flex-1 py-4 px-2 border-b-2 border-transparent active:border-teal-600">السجل</button>
+    <button onclick="showScreen('data')" class="flex-1 py-4 px-2 border-b-2 border-transparent active:border-teal-600 font-bold">إدارة البيانات</button>
   </div>
 
   <!-- DASHBOARD -->
-  <div id="dashboard" class="screen active p-4 text-center">
-    <p class="text-3xl font-bold text-teal-700 mt-10">مرحباً بك في تكاليف سوفت - النسيج</p>
-  </div>
-
-  <!-- CUSTOMERS -->
-  <div id="customers" class="screen p-4">
-    <h2 class="text-2xl font-bold mb-4">إدارة العملاء</h2>
-    <button onclick="addCustomer()" class="w-full bg-teal-600 text-white py-4 rounded-3xl mb-6">+ إضافة عميل جديد</button>
-    <div id="customers-list" class="space-y-4"></div>
-  </div>
-
-  <!-- SUPPLIERS -->
-  <div id="suppliers" class="screen p-4">
-    <h2 class="text-2xl font-bold mb-4">إدارة الموردين</h2>
-    <button onclick="addSupplier()" class="w-full bg-teal-600 text-white py-4 rounded-3xl mb-6">+ إضافة مورد جديد</button>
-    <div id="suppliers-list" class="space-y-4"></div>
-  </div>
-
-  <!-- CASH -->
-  <div id="cash" class="screen p-4">
-    <h2 class="text-2xl font-bold mb-4">قبض/صرف</h2>
-    <div class="bg-white rounded-3xl shadow overflow-hidden">
-      <table class="w-full">
-        <thead class="bg-teal-700 text-white"><tr><th class="p-3">نوع</th><th class="p-3">البيان</th><th class="p-3">المبلغ</th><th class="p-3">التاريخ</th><th class="p-3">رقم</th></tr></thead>
-        <tbody id="cash-table" class="divide-y"></tbody>
-      </table>
-    </div>
-    <button onclick="addCashTransaction()" class="fixed bottom-8 right-8 bg-teal-600 text-white w-16 h-16 rounded-full text-5xl shadow-2xl flex items-center justify-center z-50">+</button>
-  </div>
-
-  <!-- SALES LIST -->
-  <div id="salesList" class="screen p-4">
-    <h2 class="text-2xl font-bold mb-4">قائمة المبيعات</h2>
-    <div class="bg-white rounded-3xl shadow overflow-hidden">
-      <table class="w-full">
-        <thead class="bg-teal-700 text-white"><tr><th class="p-3">المبلغ</th><th class="p-3">العميل</th><th class="p-3">التاريخ</th><th class="p-3">رقم</th></tr></thead>
-        <tbody id="sales-table" class="divide-y"></tbody>
-      </table>
-    </div>
-    <button onclick="createNewInvoice()" class="fixed bottom-8 right-8 bg-teal-600 text-white w-16 h-16 rounded-full text-5xl shadow-2xl flex items-center justify-center z-50">+</button>
-  </div>
-
-  <!-- NEW INVOICE -->
-  <div id="newInvoice" class="screen p-4">
-    <h2 class="text-2xl font-bold mb-4">بيع آجل</h2>
-    <div class="bg-white rounded-3xl shadow p-6">
-      <select id="invoice-customer-select" class="w-full p-4 border rounded-2xl mb-4"></select>
-      <input id="invoice-date" type="date" class="w-full p-4 border rounded-2xl mb-4">
-      <button onclick="addItemToInvoice()" class="w-full bg-teal-600 text-white py-4 rounded-2xl mb-6">+ إضافة صنف</button>
-      <div id="invoice-items-list" class="space-y-3 mb-6"></div>
-      <div class="flex justify-between text-xl font-bold border-t pt-4">
-        <span>الإجمالي</span>
-        <span id="invoice-total" class="text-teal-600">0 ريال</span>
+  <div id="dashboard" class="screen active p-4">
+    <div class="grid grid-cols-2 gap-4">
+      <div class="bg-white rounded-3xl p-6 shadow text-center">
+        <p class="text-gray-500">إجمالي المبيعات</p>
+        <p id="total-sales" class="text-4xl font-bold text-teal-600">0 ريال</p>
       </div>
-      <div class="grid grid-cols-2 gap-4 mt-8">
-        <button onclick="saveInvoice()" class="bg-green-600 text-white py-6 rounded-3xl text-xl font-bold">💾 حفظ</button>
-        <button onclick="printInvoice()" class="bg-blue-600 text-white py-6 rounded-3xl text-xl font-bold">🖨️ طباعة</button>
+      <div class="bg-white rounded-3xl p-6 shadow text-center">
+        <p class="text-gray-500">مخزون منخفض</p>
+        <p id="low-stock" class="text-4xl font-bold text-orange-600">0</p>
+      </div>
+    </div>
+    <div class="grid grid-cols-2 gap-4 mt-4">
+      <div class="bg-white rounded-3xl p-6 shadow text-center">
+        <p class="text-gray-500">عدد الفواتير</p>
+        <p id="total-invoices" class="text-4xl font-bold text-blue-600">0</p>
+      </div>
+      <div class="bg-white rounded-3xl p-6 shadow text-center">
+        <p class="text-gray-500">عدد الأصناف</p>
+        <p id="total-products" class="text-4xl font-bold text-green-600">0</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- SALES SCREEN -->
+  <div id="sales" class="screen p-4">
+    <h2 class="text-2xl font-bold mb-4">بيع آجل</h2>
+    <div class="bg-white rounded-3xl p-6 shadow">
+      <input id="customer-name" type="text" placeholder="اسم العميل" class="w-full p-4 border rounded-2xl mb-4" value="يوسف عمار">
+      <select id="product-select" class="w-full p-4 border rounded-2xl mb-4"></select>
+      <div class="grid grid-cols-3 gap-4">
+        <div><label class="text-sm">متر</label><input id="qty-meters" type="number" value="10" min="0.1" class="w-full p-4 border rounded-2xl"></div>
+        <div><label class="text-sm">اللون</label><input id="color-input" type="text" value="أزرق" class="w-full p-4 border rounded-2xl"></div>
+        <div><label class="text-sm">رقم اللفة</label><input id="roll-number" type="text" value="LF-001" class="w-full p-4 border rounded-2xl"></div>
+      </div>
+      <button onclick="addItemToInvoice()" class="mt-6 w-full bg-teal-600 text-white py-5 rounded-3xl text-xl font-bold hover:bg-teal-700">➕ إضافة إلى الفاتورة</button>
+      <div id="current-invoice" class="mt-6 space-y-3"></div>
+      <div class="flex justify-between text-2xl font-bold mt-8 pt-6 border-t">
+        <span>الإجمالي</span>
+        <span id="invoice-total">0 ريال</span>
+      </div>
+      <div class="grid grid-cols-3 gap-4 mt-8">
+        <button onclick="saveCurrentInvoice()" class="bg-green-600 text-white py-6 rounded-3xl text-xl font-bold hover:bg-green-700">💾 حفظ</button>
+        <button onclick="printCurrentInvoice()" class="bg-blue-600 text-white py-6 rounded-3xl text-xl font-bold hover:bg-blue-700">🖨️ طباعة</button>
+        <button onclick="clearCurrentInvoice()" class="bg-red-600 text-white py-6 rounded-3xl text-xl font-bold hover:bg-red-700">🗑️ مسح</button>
       </div>
     </div>
   </div>
@@ -118,239 +86,494 @@
   <!-- PRODUCTS -->
   <div id="products" class="screen p-4">
     <h2 class="text-2xl font-bold mb-4">الأصناف والمخزون</h2>
-    <button onclick="addNewProduct()" class="w-full bg-teal-600 text-white py-4 rounded-3xl mb-6">+ إضافة صنف جديد</button>
+    <input id="product-search" type="text" placeholder="🔍 بحث عن صنف..." class="w-full p-4 border rounded-2xl mb-4" onkeyup="filterProducts(this.value)">
+    <button onclick="addNewProduct()" class="w-full bg-teal-600 text-white py-4 rounded-3xl mb-6 hover:bg-teal-700">+ إضافة صنف قماش جديد</button>
     <div id="products-list" class="space-y-4"></div>
   </div>
 
-  <!-- Hidden Print Area -->
-  <div id="print-area" class="hidden"></div>
+  <!-- INVOICE HISTORY -->
+  <div id="history" class="screen p-4">
+    <h2 class="text-2xl font-bold mb-4">سجل الفواتير</h2>
+    <div class="bg-white rounded-3xl p-6 shadow overflow-x-auto">
+      <table class="w-full text-right">
+        <thead>
+          <tr class="border-b">
+            <th class="p-3">التاريخ</th>
+            <th class="p-3">العميل</th>
+            <th class="p-3">الإجمالي</th>
+            <th class="p-3">الإجراء</th>
+          </tr>
+        </thead>
+        <tbody id="invoices-table"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- DATA MANAGEMENT -->
+  <div id="data" class="screen p-4">
+    <h2 class="text-2xl font-bold mb-6">إدارة البيانات (SQLite)</h2>
+    <div class="bg-white rounded-3xl p-6 shadow space-y-6">
+      <button onclick="exportDB()" class="w-full bg-blue-600 text-white py-5 rounded-3xl hover:bg-blue-700">📤 تصدير قاعدة البيانات (.db)</button>
+      <label class="w-full bg-purple-600 text-white py-5 rounded-3xl flex items-center justify-center cursor-pointer hover:bg-purple-700">
+        📥 استيراد قاعدة بيانات
+        <input type="file" id="importFile" accept=".db" class="hidden" onchange="importDB(event)">
+      </label>
+      <button onclick="runDemoQuery()" class="w-full bg-teal-600 text-white py-5 rounded-3xl hover:bg-teal-700">🔍 استعلام اختباري</button>
+      <button onclick="clearDB()" class="w-full bg-red-600 text-white py-5 rounded-3xl hover:bg-red-700">🗑️ مسح كل البيانات</button>
+    </div>
+    <div id="sql-result" class="mt-8 bg-white rounded-3xl p-6 text-xs overflow-auto max-h-96 hidden"></div>
+  </div>
 
   <script>
     let db;
-    let currentInvoiceItems = [];
+    let currentInvoice = [];
+
+    // Error handling wrapper
+    function safeDBRun(query, params = []) {
+      try {
+        db.run(query, params);
+        return { success: true };
+      } catch(err) {
+        console.error('DB Error:', err);
+        alert('❌ خطأ في العملية: ' + err.message);
+        return { success: false, error: err };
+      }
+    }
+
+    // Input validation
+    function validateInput(value, type, min = 0, max = 999999) {
+      const num = parseFloat(value);
+      if (isNaN(num) || num < min || num > max) {
+        throw new Error(`${type}: يجب أن تكون القيمة بين ${min} و ${max}`);
+      }
+      return num;
+    }
+
+    // Auto-save to localStorage
+    function autoSaveDB() {
+      try {
+        const data = db.export();
+        const backup = Array.from(data);
+        localStorage.setItem('takalif_db_backup', JSON.stringify(backup));
+      } catch(err) {
+        console.warn('Auto-save failed:', err);
+      }
+    }
 
     async function initSQLite() {
-      const SQL = await initSqlJs({ locateFile: f => `https://cdn.jsdelivr.net/npm/sql.js@1.14.0/dist/${f}` });
-      db = new SQL.Database();
+      try {
+        const config = { locateFile: file => `https://cdn.jsdelivr.net/npm/sql.js@1.14.0/dist/${file}` };
+        const SQL = await initSqlJs(config);
+        db = new SQL.Database();
 
-      db.run(`
-        CREATE TABLE IF NOT EXISTS customers (id INTEGER PRIMARY KEY, name TEXT, phone TEXT, balance REAL DEFAULT 0);
-        CREATE TABLE IF NOT EXISTS suppliers (id INTEGER PRIMARY KEY, name TEXT, phone TEXT, balance REAL DEFAULT 0);
-        CREATE TABLE IF NOT EXISTS cash (id INTEGER PRIMARY KEY, type TEXT, description TEXT, amount REAL, date TEXT, voucher INTEGER);
-        CREATE TABLE IF NOT EXISTS invoices (id INTEGER PRIMARY KEY, date TEXT, customer TEXT, total REAL);
-        CREATE TABLE IF NOT EXISTS products (id INTEGER PRIMARY KEY, name TEXT, price REAL, stock REAL, unit TEXT DEFAULT 'متر');
-      `);
+        db.run(`
+          CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY,
+            name TEXT NOT NULL,
+            price REAL NOT NULL,
+            stock REAL DEFAULT 0,
+            color TEXT,
+            unit TEXT DEFAULT 'متر'
+          );
+          CREATE TABLE IF NOT EXISTS invoices (
+            id INTEGER PRIMARY KEY,
+            date TEXT,
+            customer TEXT,
+            total REAL
+          );
+          CREATE TABLE IF NOT EXISTS invoice_items (
+            id INTEGER PRIMARY KEY,
+            invoice_id INTEGER,
+            product_id INTEGER,
+            meters REAL,
+            color TEXT,
+            roll TEXT,
+            subtotal REAL
+          );
+        `);
 
-      refreshAll();
-      console.log('%c✅ الكود مكتوب بالكامل وكل الميزات تعمل', 'color:#0f766e;font-size:18px;font-weight:bold');
+        const count = db.exec("SELECT COUNT(*) FROM products")[0].values[0][0];
+        if (count === 0) {
+          db.run(`INSERT INTO products (name, price, stock, color) VALUES 
+            ('قماش قطني', 120, 450, 'متعدد'),
+            ('قماش بوليستر', 85, 320, 'متعدد'),
+            ('قماش حرير', 250, 80, 'متعدد');`);
+        }
+        refreshAll();
+        setInterval(autoSaveDB, 30000); // Auto-save every 30 seconds
+        console.log('%c✅ تكاليف سوفت - النسيج جاهزة!', 'color:#0f766e; font-size:18px; font-weight:bold');
+      } catch(err) {
+        console.error('Initialization error:', err);
+        alert('❌ خطأ في تحميل التطبيق');
+      }
     }
 
     function refreshAll() {
-      renderCustomers();
-      renderSuppliers();
-      refreshCashList();
-      refreshSalesList();
       renderProducts();
-      populateCustomerSelect();
+      renderDashboard();
+      renderInvoiceHistory();
+      populateProductSelect();
     }
 
     function showScreen(id) {
       document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
       document.getElementById(id).classList.add('active');
-      if (id === 'customers') renderCustomers();
-      if (id === 'suppliers') renderSuppliers();
-      if (id === 'cash') refreshCashList();
-      if (id === 'salesList') refreshSalesList();
       if (id === 'products') renderProducts();
+      if (id === 'dashboard') renderDashboard();
+      if (id === 'history') renderInvoiceHistory();
     }
 
-    // Customers
-    function renderCustomers() {
-      const container = document.getElementById('customers-list');
-      container.innerHTML = '';
-      const stmt = db.prepare("SELECT * FROM customers ORDER BY name");
-      while (stmt.step()) {
-        const c = stmt.getAsObject();
-        const div = document.createElement('div');
-        div.className = "bg-white p-5 rounded-3xl shadow flex justify-between items-center";
-        div.innerHTML = `<div><div class="font-bold">\( {c.name}</div><div class="text-sm"> \){c.phone || ''}</div></div><button onclick="editCustomer(${c.id})" class="text-teal-600">تعديل</button>`;
-        container.appendChild(div);
+    function renderProducts(filterTerm = '') {
+      try {
+        let query = "SELECT * FROM products";
+        if (filterTerm) {
+          query += ` WHERE name LIKE '%${filterTerm}%'`;
+        }
+        const stmt = db.prepare(query);
+        let html = '';
+        while (stmt.step()) {
+          const p = stmt.getAsObject();
+          const stockColor = p.stock < 50 ? 'text-orange-600' : 'text-green-600';
+          html += `
+            <div class="bg-white p-5 rounded-3xl shadow flex justify-between items-center">
+              <div>
+                <div class="font-bold">${p.name}</div>
+                <div class="text-sm text-gray-500">${p.color} • <span class="${stockColor}">${p.stock} متر</span></div>
+                <div class="text-sm text-teal-600">${p.price} ريال/متر</div>
+              </div>
+              <button onclick="editProduct(${p.id})" class="bg-teal-600 text-white px-4 py-2 rounded-2xl text-sm hover:bg-teal-700">✏️ تعديل</button>
+            </div>
+          `;
+        }
+        document.getElementById('products-list').innerHTML = html || '<p class="text-gray-500">لا توجد أصناف بعد</p>';
+        stmt.free();
+      } catch(err) {
+        console.error('Render products error:', err);
       }
-      stmt.free();
     }
 
-    function addCustomer() {
-      const name = prompt("اسم العميل:");
-      if (!name) return;
-      const phone = prompt("رقم الجوال:", "");
-      db.run("INSERT INTO customers (name, phone) VALUES (?, ?)", [name, phone]);
-      renderCustomers();
-    }
-
-    function editCustomer(id) {
-      const newBalance = prompt("الرصيد:", "0");
-      if (newBalance !== null) db.run("UPDATE customers SET balance = ? WHERE id = ?", [parseFloat(newBalance), id]);
-      renderCustomers();
-    }
-
-    // Suppliers
-    function renderSuppliers() {
-      const container = document.getElementById('suppliers-list');
-      container.innerHTML = '';
-      const stmt = db.prepare("SELECT * FROM suppliers ORDER BY name");
-      while (stmt.step()) {
-        const s = stmt.getAsObject();
-        const div = document.createElement('div');
-        div.className = "bg-white p-5 rounded-3xl shadow flex justify-between items-center";
-        div.innerHTML = `<div><div class="font-bold">\( {s.name}</div><div class="text-sm"> \){s.phone || ''}</div></div><button onclick="editSupplier(${s.id})" class="text-teal-600">تعديل</button>`;
-        container.appendChild(div);
-      }
-      stmt.free();
-    }
-
-    function addSupplier() {
-      const name = prompt("اسم المورد:");
-      if (!name) return;
-      const phone = prompt("رقم الجوال:", "");
-      db.run("INSERT INTO suppliers (name, phone) VALUES (?, ?)", [name, phone]);
-      renderSuppliers();
-    }
-
-    function editSupplier(id) {
-      const newBalance = prompt("الرصيد:", "0");
-      if (newBalance !== null) db.run("UPDATE suppliers SET balance = ? WHERE id = ?", [parseFloat(newBalance), id]);
-      renderSuppliers();
-    }
-
-    // Cash
-    function refreshCashList() {
-      const tbody = document.getElementById('cash-table');
-      tbody.innerHTML = '';
-      const stmt = db.prepare("SELECT * FROM cash ORDER BY id DESC");
-      while (stmt.step()) {
-        const r = stmt.getAsObject();
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td class="p-3">\( {r.type}</td><td class="p-3"> \){r.description}</td><td class="p-3 font-bold">\( {r.amount}</td><td class="p-3"> \){r.date}</td><td class="p-3">${r.voucher}</td>`;
-        tbody.appendChild(tr);
-      }
-      stmt.free();
-    }
-
-    function addCashTransaction() {
-      const type = confirm("قبض أم صرف؟ (OK = قبض)") ? "قبض" : "صرف";
-      const desc = prompt("البيان:", "");
-      const amount = parseFloat(prompt("المبلغ:", "1000"));
-      if (!amount) return;
-      const date = new Date().toLocaleDateString('ar');
-      const voucher = Math.floor(1000 + Math.random() * 9000);
-      db.run("INSERT INTO cash (type, description, amount, date, voucher) VALUES (?, ?, ?, ?, ?)", [type, desc, amount, date, voucher]);
-      refreshCashList();
-    }
-
-    // Sales
-    function refreshSalesList() {
-      const tbody = document.getElementById('sales-table');
-      tbody.innerHTML = '';
-      const stmt = db.prepare("SELECT * FROM invoices ORDER BY id DESC");
-      while (stmt.step()) {
-        const r = stmt.getAsObject();
-        const tr = document.createElement('tr');
-        tr.innerHTML = `<td class="p-3">\( {r.total}</td><td class="p-3"> \){r.customer}</td><td class="p-3">\( {r.date}</td><td class="p-3"> \){r.id}</td>`;
-        tbody.appendChild(tr);
-      }
-      stmt.free();
-    }
-
-    function createNewInvoice() {
-      currentInvoiceItems = [];
-      populateCustomerSelect();
-      document.getElementById('invoice-date').value = new Date().toISOString().slice(0,10);
-      document.getElementById('invoice-items-list').innerHTML = '';
-      showScreen('newInvoice');
-    }
-
-    function populateCustomerSelect() {
-      const select = document.getElementById('invoice-customer-select');
-      select.innerHTML = '<option value="">اختر العميل...</option>';
-      const stmt = db.prepare("SELECT * FROM customers ORDER BY name");
-      while (stmt.step()) {
-        const c = stmt.getAsObject();
-        const opt = document.createElement('option');
-        opt.value = c.name;
-        opt.textContent = c.name;
-        select.appendChild(opt);
-      }
-      stmt.free();
-    }
-
-    function addItemToInvoice() {
-      const name = prompt("اسم الصنف:");
-      if (!name) return;
-      const qty = parseFloat(prompt("الكمية:", "10"));
-      const price = parseFloat(prompt("السعر:", "120"));
-      currentInvoiceItems.push({name, qty, price, subtotal: qty * price});
-      renderInvoiceItems();
-    }
-
-    function renderInvoiceItems() {
-      const container = document.getElementById('invoice-items-list');
-      container.innerHTML = currentInvoiceItems.map(item => `
-        <div class="flex justify-between bg-gray-50 p-4 rounded-2xl">
-          <div>${item.name} × ${item.qty}</div>
-          <div class="font-bold">${item.subtotal} ريال</div>
-        </div>`).join('');
-      const total = currentInvoiceItems.reduce((sum, i) => sum + i.subtotal, 0);
-      document.getElementById('invoice-total').textContent = total + ' ريال';
-    }
-
-    function saveInvoice() {
-      const customer = document.getElementById('invoice-customer-select').value || "عميل عام";
-      const date = document.getElementById('invoice-date').value;
-      const total = currentInvoiceItems.reduce((sum, i) => sum + i.subtotal, 0);
-      db.run("INSERT INTO invoices (date, customer, total) VALUES (?, ?, ?)", [date, customer, total]);
-      alert("✅ تم حفظ الفاتورة بنجاح!");
-      showScreen('salesList');
-    }
-
-    // Fixed & Enhanced Printing
-    function printInvoice() {
-      if (currentInvoiceItems.length === 0) return alert("لا توجد أصناف للطباعة");
-
-      const customer = document.getElementById('invoice-customer-select').value || "عميل عام";
-      const date = document.getElementById('invoice-date').value || new Date().toLocaleDateString('ar');
-      let itemsHtml = currentInvoiceItems.map(i => `
-        <div style="display:flex;justify-content:space-between;margin:8px 0;">
-          <span>${i.name} × ${i.qty}</span>
-          <span>${i.subtotal} ريال</span>
-        </div>`).join('');
-      const total = currentInvoiceItems.reduce((sum, i) => sum + i.subtotal, 0);
-
-      const printContent = `
-        <div style="padding:30px; font-family:Arial; direction:rtl; text-align:right; max-width:400px; margin:auto; border:2px dashed #000;">
-          <h1 style="text-align:center;margin-bottom:20px;font-size:22px;">تكاليف سوفت - النسيج</h1>
-          <p><strong>العميل:</strong> ${customer}</p>
-          <p><strong>التاريخ:</strong> ${date}</p>
-          <hr style="margin:15px 0;">
-          ${itemsHtml}
-          <hr style="margin:15px 0;">
-          <div style="font-size:18px;font-weight:bold;text-align:right;">الإجمالي: ${total} ريال</div>
-          <p style="text-align:center;margin-top:40px;font-size:14px;">شكراً لتعاملكم معنا</p>
-        </div>`;
-
-      const printArea = document.getElementById('print-area');
-      printArea.innerHTML = printContent;
-      printArea.classList.remove('hidden');
-      window.print();
-      printArea.classList.add('hidden');
-    }
-
-    function renderProducts() {
-      const container = document.getElementById('products-list');
-      container.innerHTML = '<p class="text-teal-600">الأصناف جاهزة - اضغط + لإضافة</p>';
+    function filterProducts(searchTerm) {
+      renderProducts(searchTerm);
     }
 
     function addNewProduct() {
-      alert("✅ إضافة صنف جديد جاهزة للتطوير في الخطوة القادمة");
+      try {
+        const name = prompt("اسم الصنف:");
+        if (!name) return;
+        const price = validateInput(prompt("السعر للمتر:", "120"), "السعر", 1, 10000);
+        const stock = validateInput(prompt("المخزون (متر):", "100"), "المخزون", 0, 100000);
+        const color = prompt("اللون:", "متعدد") || "متعدد";
+        
+        const result = safeDBRun("INSERT INTO products (name, price, stock, color) VALUES (?, ?, ?, ?)", 
+          [name, price, stock, color]);
+        if (result.success) {
+          alert('✅ تم إضافة الصنف بنجاح');
+          refreshAll();
+        }
+      } catch(err) {
+        alert('❌ ' + err.message);
+      }
+    }
+
+    function editProduct(id) {
+      try {
+        const stmt = db.prepare("SELECT * FROM products WHERE id = ?");
+        stmt.bind([id]);
+        if (stmt.step()) {
+          const p = stmt.getAsObject();
+          const newPrice = validateInput(prompt("السعر الجديد:", p.price), "السعر", 1, 10000);
+          const newStock = validateInput(prompt("المخزون الجديد:", p.stock), "المخزون", 0, 100000);
+          
+          const result = safeDBRun("UPDATE products SET price = ?, stock = ? WHERE id = ?", 
+            [newPrice, newStock, id]);
+          if (result.success) {
+            alert('✅ تم التحديث بنجاح');
+            refreshAll();
+          }
+        }
+        stmt.free();
+      } catch(err) {
+        alert('❌ ' + err.message);
+      }
+    }
+
+    function populateProductSelect() {
+      try {
+        const select = document.getElementById('product-select');
+        select.innerHTML = '';
+        const stmt = db.prepare("SELECT id, name, price, stock FROM products");
+        while (stmt.step()) {
+          const p = stmt.getAsObject();
+          const opt = document.createElement('option');
+          opt.value = p.id;
+          opt.textContent = `${p.name} - ${p.price} ريال (مخزون: ${p.stock})`;
+          select.appendChild(opt);
+        }
+        stmt.free();
+      } catch(err) {
+        console.error('Populate select error:', err);
+      }
+    }
+
+    function addItemToInvoice() {
+      try {
+        const productId = parseInt(document.getElementById('product-select').value);
+        const meters = validateInput(document.getElementById('qty-meters').value, "الكمية", 0.1, 1000);
+        const color = document.getElementById('color-input').value || 'عام';
+        const roll = document.getElementById('roll-number').value || 'بدون';
+
+        const stmt = db.prepare("SELECT price, stock, name FROM products WHERE id = ?");
+        stmt.bind([productId]);
+        if (stmt.step()) {
+          const product = stmt.getAsObject();
+          if (meters > product.stock) {
+            alert(`⚠️ الكمية أكبر من المخزون! المتاح: ${product.stock}`);
+            stmt.free();
+            return;
+          }
+          const subtotal = meters * product.price;
+          currentInvoice.push({productId, meters, color, roll, price: product.price, subtotal, productName: product.name});
+          renderCurrentInvoice();
+        }
+        stmt.free();
+      } catch(err) {
+        alert('❌ ' + err.message);
+      }
+    }
+
+    function renderCurrentInvoice() {
+      const container = document.getElementById('current-invoice');
+      container.innerHTML = currentInvoice.map((item, idx) => `
+        <div class="flex justify-between bg-gray-50 p-4 rounded-2xl items-center">
+          <div><strong>${item.meters}م</strong> ${item.color} • لفة ${item.roll}</div>
+          <div class="flex gap-3 items-center">
+            <div class="font-bold">${item.subtotal.toFixed(0)} ريال</div>
+            <button onclick="removeFromInvoice(${idx})" class="bg-red-500 text-white px-2 py-1 rounded text-sm hover:bg-red-600">✕</button>
+          </div>
+        </div>
+      `).join('');
+      const total = currentInvoice.reduce((sum, i) => sum + i.subtotal, 0);
+      document.getElementById('invoice-total').textContent = total.toFixed(0) + ' ريال';
+    }
+
+    function removeFromInvoice(index) {
+      currentInvoice.splice(index, 1);
+      renderCurrentInvoice();
+    }
+
+    function clearCurrentInvoice() {
+      if (currentInvoice.length === 0) return alert("لا توجد عناصر لمسحها");
+      if (confirm('هل تريد مسح الفاتورة الحالية؟')) {
+        currentInvoice = [];
+        renderCurrentInvoice();
+      }
+    }
+
+    function saveCurrentInvoice() {
+      try {
+        if (currentInvoice.length === 0) return alert("أضف أصناف أولاً");
+        const customer = document.getElementById('customer-name').value || "عميل عام";
+        const total = currentInvoice.reduce((sum, i) => sum + i.subtotal, 0);
+        const date = new Date().toLocaleDateString('ar');
+
+        let result = safeDBRun("INSERT INTO invoices (date, customer, total) VALUES (?, ?, ?)", [date, customer, total]);
+        if (!result.success) return;
+
+        const invoiceId = db.exec("SELECT last_insert_rowid()")[0].values[0][0];
+
+        currentInvoice.forEach(item => {
+          safeDBRun("INSERT INTO invoice_items (invoice_id, product_id, meters, color, roll, subtotal) VALUES (?, ?, ?, ?, ?, ?)",
+            [invoiceId, item.productId, item.meters, item.color, item.roll, item.subtotal]);
+        });
+
+        currentInvoice.forEach(item => {
+          safeDBRun("UPDATE products SET stock = stock - ? WHERE id = ?", [item.meters, item.productId]);
+        });
+
+        alert(`✅ تم حفظ الفاتورة بنجاح! (الرقم: ${invoiceId})`);
+        currentInvoice = [];
+        renderCurrentInvoice();
+        refreshAll();
+        autoSaveDB();
+      } catch(err) {
+        alert('❌ خطأ: ' + err.message);
+      }
+    }
+
+    function printCurrentInvoice() {
+      try {
+        if (currentInvoice.length === 0) return alert("لا توجد عناصر للطباعة");
+        
+        const total = currentInvoice.reduce((sum, i) => sum + i.subtotal, 0);
+        const customer = document.getElementById('customer-name').value || "عميل عام";
+        const date = new Date().toLocaleDateString('ar');
+        
+        let html = `
+          <html dir="rtl">
+            <head>
+              <meta charset="UTF-8">
+              <title>فاتورة المبيعات</title>
+              <style>
+                body { font-family: Arial; direction: rtl; padding: 20px; }
+                h1 { text-align: center; color: #0f766e; }
+                table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                th, td { border: 1px solid #ccc; padding: 10px; text-align: right; }
+                th { background-color: #0f766e; color: white; }
+                .total { font-size: 18px; font-weight: bold; text-align: left; margin-top: 20px; }
+              </style>
+            </head>
+            <body>
+              <h1>فاتورة المبيعات</h1>
+              <p><strong>التاريخ:</strong> ${date}</p>
+              <p><strong>العميل:</strong> ${customer}</p>
+              <table>
+                <tr>
+                  <th>المنتج</th>
+                  <th>الكمية (متر)</th>
+                  <th>اللون</th>
+                  <th>رقم اللفة</th>
+                  <th>السعر</th>
+                  <th>الإجمالي</th>
+                </tr>
+                ${currentInvoice.map(item => `
+                  <tr>
+                    <td>${item.productName}</td>
+                    <td>${item.meters}</td>
+                    <td>${item.color}</td>
+                    <td>${item.roll}</td>
+                    <td>${item.price}</td>
+                    <td>${item.subtotal.toFixed(0)}</td>
+                  </tr>
+                `).join('')}
+              </table>
+              <div class="total">الإجمالي: ${total.toFixed(0)} ريال</div>
+            </body>
+          </html>
+        `;
+        
+        const printWindow = window.open('', '', 'height=600,width=900');
+        printWindow.document.write(html);
+        printWindow.document.close();
+        setTimeout(() => printWindow.print(), 250);
+      } catch(err) {
+        alert('❌ خطأ في الطباعة: ' + err.message);
+      }
+    }
+
+    function renderInvoiceHistory() {
+      try {
+        const result = db.exec("SELECT * FROM invoices ORDER BY date DESC LIMIT 50");
+        const tbody = document.getElementById('invoices-table');
+        
+        if (!result || result.length === 0 || result[0].values.length === 0) {
+          tbody.innerHTML = '<tr><td colspan="4" class="text-center p-4 text-gray-500">لا توجد فواتير</td></tr>';
+          return;
+        }
+        
+        tbody.innerHTML = result[0].values.map(row => `
+          <tr class="border-b hover:bg-gray-50">
+            <td class="p-3">${row[1]}</td>
+            <td class="p-3">${row[2]}</td>
+            <td class="p-3">${row[3]} ريال</td>
+            <td class="p-3"><button onclick="viewInvoiceDetails(${row[0]})" class="text-teal-600 hover:underline">عرض</button></td>
+          </tr>
+        `).join('');
+      } catch(err) {
+        console.error('Render history error:', err);
+      }
+    }
+
+    function viewInvoiceDetails(invoiceId) {
+      try {
+        const result = db.exec(`
+          SELECT ii.*, p.name FROM invoice_items ii
+          JOIN products p ON ii.product_id = p.id
+          WHERE ii.invoice_id = ?
+        `, [invoiceId]);
+        
+        alert('📋 تفاصيل الفاتورة:\n' + JSON.stringify(result, null, 2));
+      } catch(err) {
+        alert('❌ خطأ: ' + err.message);
+      }
+    }
+
+    function renderDashboard() {
+      try {
+        const sales = db.exec("SELECT COALESCE(SUM(total), 0) FROM invoices");
+        document.getElementById('total-sales').textContent = (sales[0]?.values[0][0] || 0).toFixed(0) + ' ريال';
+        
+        const low = db.exec("SELECT COUNT(*) FROM products WHERE stock < 50");
+        document.getElementById('low-stock').textContent = low[0]?.values[0][0] || 0;
+        
+        const invoices = db.exec("SELECT COUNT(*) FROM invoices");
+        document.getElementById('total-invoices').textContent = invoices[0]?.values[0][0] || 0;
+        
+        const products = db.exec("SELECT COUNT(*) FROM products");
+        document.getElementById('total-products').textContent = products[0]?.values[0][0] || 0;
+      } catch(err) {
+        console.error('Dashboard error:', err);
+      }
+    }
+
+    function exportDB() {
+      try {
+        const data = db.export();
+        const blob = new Blob([data], { type: 'application/octet-stream' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `takalif_textile_${new Date().toISOString().slice(0,10)}.db`;
+        a.click();
+        URL.revokeObjectURL(url);
+        alert('✅ تم تصدير قاعدة البيانات بنجاح');
+      } catch(err) {
+        alert('❌ خطأ في التصدير: ' + err.message);
+      }
+    }
+
+    function importDB(e) {
+      try {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          try {
+            const uint8 = new Uint8Array(ev.target.result);
+            db = new SQL.Database(uint8);
+            alert('✅ تم استيراد قاعدة البيانات بنجاح!');
+            refreshAll();
+            autoSaveDB();
+          } catch(err) {
+            alert('❌ خطأ في الملف: ' + err.message);
+          }
+        };
+        reader.readAsArrayBuffer(file);
+      } catch(err) {
+        alert('❌ خطأ: ' + err.message);
+      }
+    }
+
+    function runDemoQuery() {
+      try {
+        const result = db.exec("SELECT * FROM products LIMIT 5");
+        document.getElementById('sql-result').innerHTML = `<pre>${JSON.stringify(result, null, 2)}</pre>`;
+        document.getElementById('sql-result').classList.remove('hidden');
+      } catch(err) {
+        alert('❌ خطأ في الاستعلام: ' + err.message);
+      }
+    }
+
+    function clearDB() {
+      if (confirm('⚠️ هل تريد مسح كل البيانات؟ هذه العملية لا يمكن التراجع عنها')) {
+        try {
+          const SQL = window.SQL;
+          db = new SQL.Database();
+          initSQLite();
+          alert('✅ تم مسح البيانات بنجاح');
+        } catch(err) {
+          alert('❌ خطأ: ' + err.message);
+        }
+      }
     }
 
     window.onload = initSQLite;
