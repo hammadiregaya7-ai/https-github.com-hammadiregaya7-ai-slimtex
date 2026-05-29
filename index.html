@@ -26,11 +26,7 @@
   <div class="teal text-white p-4 flex items-center justify-between sticky top-0 z-50">
     <div class="flex items-center gap-3">
       <i onclick="showScreen('dashboard')" class="fas fa-bars text-3xl cursor-pointer"></i>
-      <h1 class="text-2xl font-bold">تكاليف سوفت</h1>
-    </div>
-    <div class="flex gap-4">
-      <i class="fas fa-bell text-2xl"></i>
-      <i class="fas fa-share-alt text-2xl"></i>
+      <h1 class="text-2xl font-bold">تكاليف سوفت - النسيج</h1>
     </div>
   </div>
 
@@ -102,7 +98,7 @@
     <div class="bg-white rounded-3xl shadow p-6">
       <select id="invoice-customer-select" class="w-full p-4 border rounded-2xl mb-4"></select>
       <input id="invoice-date" type="date" class="w-full p-4 border rounded-2xl mb-4">
-      <button onclick="addItemToInvoice()" class="w-full bg-teal-600 text-white py-4 rounded-2xl mb-6">+ إضافة صنف</button>
+      <button onclick="addItemToInvoice()" class="w-full bg-teal-600 text-white py-4 rounded-2xl mb-6">+ إضافة صنف من المخزون</button>
       <div id="invoice-items-list" class="space-y-3 mb-6"></div>
       <div class="flex justify-between text-xl font-bold border-t pt-4">
         <span>الإجمالي</span>
@@ -129,9 +125,32 @@
     let db;
     let currentInvoiceItems = [];
 
+    // ==================== LocalStorage Persistence ====================
+    function saveDB() {
+      try {
+        const data = db.export();
+        const base64 = btoa(String.fromCharCode(...new Uint8Array(data)));
+        localStorage.setItem('takalifSoftDB_nesij', base64);
+      } catch(e) {}
+    }
+
+    function loadDB(SQL) {
+      const saved = localStorage.getItem('takalifSoftDB_nesij');
+      if (saved) {
+        try {
+          const binary = Uint8Array.from(atob(saved).split('').map(c => c.charCodeAt(0)));
+          db = new SQL.Database(binary);
+          console.log('✅ تم تحميل البيانات من localStorage');
+          return;
+        } catch(e) {}
+      }
+      db = new SQL.Database();
+    }
+
+    // ==================== Initialize ====================
     async function initSQLite() {
       const SQL = await initSqlJs({ locateFile: f => `https://cdn.jsdelivr.net/npm/sql.js@1.14.0/dist/${f}` });
-      db = new SQL.Database();
+      loadDB(SQL);
 
       db.run(`
         CREATE TABLE IF NOT EXISTS customers (id INTEGER PRIMARY KEY, name TEXT, phone TEXT, balance REAL DEFAULT 0);
@@ -142,7 +161,7 @@
       `);
 
       refreshAll();
-      console.log('%c✅ الكود مكتوب بالكامل وكل الميزات تعمل', 'color:#0f766e;font-size:18px;font-weight:bold');
+      console.log('%c✅ تكاليف سوفت - النسخة المتقدمة جاهزة!', 'color:#0f766e;font-size:18px;font-weight:bold');
     }
 
     function refreshAll() {
@@ -164,7 +183,7 @@
       if (id === 'products') renderProducts();
     }
 
-    // Customers
+    // ==================== Customers ====================
     function renderCustomers() {
       const container = document.getElementById('customers-list');
       container.innerHTML = '';
@@ -173,7 +192,8 @@
         const c = stmt.getAsObject();
         const div = document.createElement('div');
         div.className = "bg-white p-5 rounded-3xl shadow flex justify-between items-center";
-        div.innerHTML = `<div><div class="font-bold">\( {c.name}</div><div class="text-sm"> \){c.phone || ''}</div></div><button onclick="editCustomer(${c.id})" class="text-teal-600">تعديل</button>`;
+        div.innerHTML = `<div><div class="font-bold">\( {c.name}</div><div class="text-sm"> \){c.phone || ''}</div><div class="text-teal-600 text-xs">الرصيد: ${c.balance} ريال</div></div>
+                         <button onclick="editCustomer(${c.id})" class="text-teal-600">تعديل</button>`;
         container.appendChild(div);
       }
       stmt.free();
@@ -184,16 +204,20 @@
       if (!name) return;
       const phone = prompt("رقم الجوال:", "");
       db.run("INSERT INTO customers (name, phone) VALUES (?, ?)", [name, phone]);
+      saveDB();
       renderCustomers();
     }
 
     function editCustomer(id) {
-      const newBalance = prompt("الرصيد:", "0");
-      if (newBalance !== null) db.run("UPDATE customers SET balance = ? WHERE id = ?", [parseFloat(newBalance), id]);
-      renderCustomers();
+      const newBalance = prompt("الرصيد الجديد:", "0");
+      if (newBalance !== null) {
+        db.run("UPDATE customers SET balance = ? WHERE id = ?", [parseFloat(newBalance), id]);
+        saveDB();
+        renderCustomers();
+      }
     }
 
-    // Suppliers
+    // ==================== Suppliers (مثل العملاء) ====================
     function renderSuppliers() {
       const container = document.getElementById('suppliers-list');
       container.innerHTML = '';
@@ -202,7 +226,8 @@
         const s = stmt.getAsObject();
         const div = document.createElement('div');
         div.className = "bg-white p-5 rounded-3xl shadow flex justify-between items-center";
-        div.innerHTML = `<div><div class="font-bold">\( {s.name}</div><div class="text-sm"> \){s.phone || ''}</div></div><button onclick="editSupplier(${s.id})" class="text-teal-600">تعديل</button>`;
+        div.innerHTML = `<div><div class="font-bold">\( {s.name}</div><div class="text-sm"> \){s.phone || ''}</div></div>
+                         <button onclick="editSupplier(${s.id})" class="text-teal-600">تعديل</button>`;
         container.appendChild(div);
       }
       stmt.free();
@@ -213,16 +238,18 @@
       if (!name) return;
       const phone = prompt("رقم الجوال:", "");
       db.run("INSERT INTO suppliers (name, phone) VALUES (?, ?)", [name, phone]);
+      saveDB();
       renderSuppliers();
     }
 
     function editSupplier(id) {
       const newBalance = prompt("الرصيد:", "0");
       if (newBalance !== null) db.run("UPDATE suppliers SET balance = ? WHERE id = ?", [parseFloat(newBalance), id]);
+      saveDB();
       renderSuppliers();
     }
 
-    // Cash
+    // ==================== Cash ====================
     function refreshCashList() {
       const tbody = document.getElementById('cash-table');
       tbody.innerHTML = '';
@@ -241,13 +268,14 @@
       const desc = prompt("البيان:", "");
       const amount = parseFloat(prompt("المبلغ:", "1000"));
       if (!amount) return;
-      const date = new Date().toLocaleDateString('ar');
+      const date = new Date().toLocaleDateString('ar-SA');
       const voucher = Math.floor(1000 + Math.random() * 9000);
       db.run("INSERT INTO cash (type, description, amount, date, voucher) VALUES (?, ?, ?, ?, ?)", [type, desc, amount, date, voucher]);
+      saveDB();
       refreshCashList();
     }
 
-    // Sales
+    // ==================== Sales ====================
     function refreshSalesList() {
       const tbody = document.getElementById('sales-table');
       tbody.innerHTML = '';
@@ -284,11 +312,34 @@
     }
 
     function addItemToInvoice() {
-      const name = prompt("اسم الصنف:");
-      if (!name) return;
-      const qty = parseFloat(prompt("الكمية:", "10"));
-      const price = parseFloat(prompt("السعر:", "120"));
-      currentInvoiceItems.push({name, qty, price, subtotal: qty * price});
+      const products = [];
+      const stmt = db.prepare("SELECT * FROM products WHERE stock > 0 ORDER BY name");
+      while (stmt.step()) {
+        products.push(stmt.getAsObject());
+      }
+      stmt.free();
+
+      if (products.length === 0) return alert("❌ لا يوجد أصناف متاحة في المخزون");
+
+      let list = products.map((p, i) => `${i+1}. \( {p.name} ( \){p.stock} ${p.unit} - ${p.price} ريال)`).join('\n');
+      const choice = prompt(`اختر رقم الصنف:\n${list}`, "1");
+      if (!choice) return;
+
+      const index = parseInt(choice) - 1;
+      if (index < 0 || index >= products.length) return alert("اختيار غير صحيح");
+
+      const p = products[index];
+      const qty = parseFloat(prompt(`كمية ${p.name} (المتوفر: ${p.stock} ${p.unit})`, "10"));
+      if (!qty || qty <= 0 || qty > p.stock) return alert("كمية غير متوفرة أو غير صحيحة!");
+
+      currentInvoiceItems.push({
+        id: p.id,
+        name: p.name,
+        qty: qty,
+        price: p.price,
+        subtotal: qty * p.price
+      });
+
       renderInvoiceItems();
     }
 
@@ -307,17 +358,75 @@
       const customer = document.getElementById('invoice-customer-select').value || "عميل عام";
       const date = document.getElementById('invoice-date').value;
       const total = currentInvoiceItems.reduce((sum, i) => sum + i.subtotal, 0);
+
+      // حفظ الفاتورة
       db.run("INSERT INTO invoices (date, customer, total) VALUES (?, ?, ?)", [date, customer, total]);
-      alert("✅ تم حفظ الفاتورة بنجاح!");
+
+      // خصم من المخزون
+      currentInvoiceItems.forEach(item => {
+        if (item.id) {
+          db.run("UPDATE products SET stock = stock - ? WHERE id = ?", [item.qty, item.id]);
+        }
+      });
+
+      // تحديث رصيد العميل
+      if (customer !== "عميل عام") {
+        db.run("UPDATE customers SET balance = balance + ? WHERE name = ?", [total, customer]);
+      }
+
+      saveDB();
+      alert("✅ تم حفظ الفاتورة وتحديث المخزون ورصيد العميل بنجاح!");
+      currentInvoiceItems = [];
       showScreen('salesList');
     }
 
-    // Fixed & Enhanced Printing
+    // ==================== Products ====================
+    function renderProducts() {
+      const container = document.getElementById('products-list');
+      container.innerHTML = '';
+      const stmt = db.prepare("SELECT * FROM products ORDER BY name");
+      while (stmt.step()) {
+        const p = stmt.getAsObject();
+        const div = document.createElement('div');
+        div.className = "bg-white p-5 rounded-3xl shadow flex justify-between items-center";
+        div.innerHTML = `<div>
+                           <div class="font-bold">${p.name}</div>
+                           <div class="text-sm">${p.stock} ${p.unit} • ${p.price} ريال</div>
+                         </div>
+                         <button onclick="editProduct(${p.id})" class="text-teal-600">تعديل المخزون</button>`;
+        container.appendChild(div);
+      }
+      stmt.free();
+      if (container.innerHTML === '') container.innerHTML = '<p class="text-gray-500 text-center py-8">لا يوجد أصناف بعد. اضغط + لإضافة أول صنف</p>';
+    }
+
+    function addNewProduct() {
+      const name = prompt("اسم الصنف:");
+      if (!name) return;
+      const price = parseFloat(prompt("السعر للوحدة:", "120"));
+      const stock = parseFloat(prompt("المخزون الأولي:", "100"));
+      const unit = prompt("الوحدة (متر / لفة / كجم ...):", "متر");
+
+      db.run("INSERT INTO products (name, price, stock, unit) VALUES (?, ?, ?, ?)", [name, price, stock, unit]);
+      saveDB();
+      renderProducts();
+    }
+
+    function editProduct(id) {
+      const newStock = prompt("المخزون الجديد:", "0");
+      if (newStock !== null) {
+        db.run("UPDATE products SET stock = ? WHERE id = ?", [parseFloat(newStock), id]);
+        saveDB();
+        renderProducts();
+      }
+    }
+
+    // ==================== Print ====================
     function printInvoice() {
       if (currentInvoiceItems.length === 0) return alert("لا توجد أصناف للطباعة");
 
       const customer = document.getElementById('invoice-customer-select').value || "عميل عام";
-      const date = document.getElementById('invoice-date').value || new Date().toLocaleDateString('ar');
+      const date = document.getElementById('invoice-date').value || new Date().toLocaleDateString('ar-SA');
       let itemsHtml = currentInvoiceItems.map(i => `
         <div style="display:flex;justify-content:space-between;margin:8px 0;">
           <span>${i.name} × ${i.qty}</span>
@@ -342,15 +451,6 @@
       printArea.classList.remove('hidden');
       window.print();
       printArea.classList.add('hidden');
-    }
-
-    function renderProducts() {
-      const container = document.getElementById('products-list');
-      container.innerHTML = '<p class="text-teal-600">الأصناف جاهزة - اضغط + لإضافة</p>';
-    }
-
-    function addNewProduct() {
-      alert("✅ إضافة صنف جديد جاهزة للتطوير في الخطوة القادمة");
     }
 
     window.onload = initSQLite;
