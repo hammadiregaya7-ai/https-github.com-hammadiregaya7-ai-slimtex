@@ -100,6 +100,44 @@ function editProduct(id) {
   renderDashboard();
 }
 
+/* ==================== CATEGORIES ==================== */
+
+function getAllCategories() {
+  const categories = [];
+  const stmt = db.prepare("SELECT * FROM categories ORDER BY name");
+  while (stmt.step()) {
+    categories.push(stmt.getAsObject());
+  }
+  stmt.free();
+  return categories;
+}
+
+function addCategory() {
+  const name = prompt("اسم الفئة الجديدة:");
+  if (!name) return;
+
+  try {
+    db.run("INSERT INTO categories (name) VALUES (?)", [name]);
+    saveDB();
+    alert("✅ تمت إضافة الفئة بنجاح");
+  } catch (e) {
+    alert("هذه الفئة موجودة بالفعل");
+  }
+}
+
+function getCategoryName(categoryId) {
+  if (!categoryId) return "بدون فئة";
+  const stmt = db.prepare("SELECT name FROM categories WHERE id = ?");
+  stmt.bind([categoryId]);
+  if (stmt.step()) {
+    const result = stmt.getAsObject();
+    stmt.free();
+    return result.name;
+  }
+  stmt.free();
+  return "بدون فئة";
+}
+
 /* ==================== CUSTOMERS ==================== */
 function renderCustomers() {
   const container = document.getElementById('customers-list');
