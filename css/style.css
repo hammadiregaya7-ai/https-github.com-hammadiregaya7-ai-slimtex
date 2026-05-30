@@ -1,0 +1,47 @@
+/* Takalif Textile Pro v2 - Styles */
+
+body {
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.teal {
+  background-color: #0f766e;
+}
+
+.screen {
+  display: none;
+}
+
+.active {
+  display: block;
+}
+
+#print-area {
+  display: none;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #print-area, #print-area * {
+    visibility: visible;
+  }
+  #print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    padding: 40px;
+    font-size: 15px;
+  }
+}
+
+/* تحسينات إضافية */
+.rounded-3xl {
+  border-radius: 1.5rem;
+}
+
+.shadow {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
